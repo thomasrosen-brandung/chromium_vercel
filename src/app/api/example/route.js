@@ -1,7 +1,8 @@
 import chromium from "@sparticuz/chromium-min";
 import puppeteer from "puppeteer-core";
 
-
+import { simplifyHtml } from "./simplifyHtml";
+// import { queryGpt } from "./queryGpt";
 
 const IS_LOCAL = process.env.VERCEL_ENV === 'development';
 const LOCAL_CHROMIUM_PATH = process.env.LOCAL_CHROMIUM_PATH;
@@ -14,7 +15,25 @@ chromium.setGraphicsMode = false;
 
 
 
-export async function GET() {
+export async function GET(req, res) {
+
+  // // get get params
+  // const { url, q } = req?.query
+
+  // if (typeof url !== 'string' || url.length === 0) {
+  //   return Response.json({
+  //     error: 'no url in get (?url=x)'
+  //   }, 400)
+  // }
+
+  // if (typeof q !== 'string' || q.length === 0) {
+  //   return Response.json({
+  //     error: 'no question in get (?q=x)'
+  //   }, 400)
+  // }
+
+  const url = 'https://www.example.com'
+
   try {
     const response_data = {}
 
@@ -22,8 +41,6 @@ export async function GET() {
     // await chromium.font(
     //   "https://raw.githack.com/googlei18n/noto-emoji/master/fonts/NotoColorEmoji.ttf"
     // );
-
-    console.log('LOCAL_CHROMIUM_PATH', LOCAL_CHROMIUM_PATH)
 
     const browser = await puppeteer.launch({
       args: chromium.args,
@@ -37,7 +54,7 @@ export async function GET() {
 
     const page = await browser.newPage();
 
-    await page.goto("https://www.example.com", { waitUntil: "networkidle0" });
+    await page.goto(url, { waitUntil: "networkidle0" });
 
     console.log("Chromium:", await browser.version());
     console.log("Page Title:", await page.title());
@@ -45,15 +62,17 @@ export async function GET() {
     response_data.url = await page.url();
     response_data.chromium = await browser.version();
     response_data.title = await page.title();
-    response_data.content = await page.content();
+
+    const html_text = await simplifyHtml(page);
+    response_data.html_text = html_text;
 
     await browser.close();
 
     return Response.json(response_data)
   } catch (error) {
     console.log('error', error)
+    return Response.json({ error }, 500)
   }
-
 
 }
 
