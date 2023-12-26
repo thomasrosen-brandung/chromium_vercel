@@ -1,7 +1,9 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
 
 import chromium from "@sparticuz/chromium-min";
 import puppeteer from "puppeteer-core";
+
+dotenv.config({ path: './.env.local' })
 
 const IS_LOCAL = process.env.VERCEL_ENV === 'development';
 const LOCAL_CHROMIUM_PATH = process.env.LOCAL_CHROMIUM_PATH;
@@ -19,8 +21,6 @@ chromium.setGraphicsMode = false;
   //   "https://raw.githack.com/googlei18n/noto-emoji/master/fonts/NotoColorEmoji.ttf"
   // );
 
-  console.log('LOCAL_CHROMIUM_PATH', LOCAL_CHROMIUM_PATH)
-
   const browser = await puppeteer.launch({
     args: chromium.args,
     defaultViewport: chromium.defaultViewport,
@@ -34,9 +34,6 @@ chromium.setGraphicsMode = false;
   const page = await browser.newPage();
 
   await page.goto("https://www.example.com", { waitUntil: "networkidle0" });
-
-  console.log("Chromium:", await browser.version());
-  console.log("Page Title:", await page.title());
 
   await browser.close();
 

@@ -64,32 +64,47 @@ function getChildNodes(tree, node) {
   }
 }
 
+function list_to_tree(list) {
+  var map = {}, node, roots = [], i;
+
+  for (i = 0; i < list.length; i += 1) {
+    map[list[i].id] = i; // initialize the map
+    list[i].children = []; // initialize the children
+  }
+
+  for (i = 0; i < list.length; i += 1) {
+    node = list[i];
+    if (node.parentId !== "0") {
+      // if you have dangling branches check that map[node.parentId] exists
+      list[map[node.parentId]].children.push(node);
+    } else {
+      roots.push(node);
+    }
+  }
+  return roots;
+}
+
 export async function simplifyHtml(page) {
   // await page.content()
 
   const client = await getClient(page)
-  let tree = (await getAccessibilityTree(client)).nodes
+  const tree_list = (await getAccessibilityTree(client)).nodes
+  // const tree = list_to_tree(tree_list)
 
-  console.log('tree', tree)
+  // for (let i = 0; i < tree.length; i++) {
+  //   tree[i] = simplifyTree(tree[i])
+  // }
 
-  for (let i = 0; i < tree.length; i++) {
-    tree[i] = simplifyTree(tree[i])
-  }
-  console.log('tree', tree)
+  // for (let i = 0; i < tree.length; i++) {
+  //   const node = tree[i]
 
-  tree = tree.map((node) => {
-    const { tree: new_tree, children } = getChildNodes(tree, node)
-    tree = new_tree
-
-    return {
-      ...node,
-      children,
-    }
-  })
+  //   const { tree: new_tree, children } = getChildNodes(tree, node)
+  //   tree = new_tree
+  // }
 
   // tree = tree.filter(Boolean)
 
-  return tree // JSON.stringify(tree, null, 2)
+  return tree_list // JSON.stringify(tree, null, 2)
 
   return await page.content()
 }

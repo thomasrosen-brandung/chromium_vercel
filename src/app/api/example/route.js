@@ -1,30 +1,22 @@
-import chromium from "@sparticuz/chromium-min";
-import puppeteer from "puppeteer-core";
-
-import { simplifyHtml } from "./simplifyHtml";
 // import { queryGpt } from "./queryGpt";
 
-const IS_LOCAL = process.env.VERCEL_ENV === 'development';
-const LOCAL_CHROMIUM_PATH = process.env.LOCAL_CHROMIUM_PATH;
-
-// Optional: If you'd like to use the legacy headless mode. "new" is the default.
-chromium.setHeadlessMode = true;
-
-// Optional: If you'd like to disable webgl, true is the default.
-chromium.setGraphicsMode = false;
-
-
+import { openWebpage } from "@/lib/openWebpage";
 
 export async function GET(req, res) {
 
-  // // get get params
-  // const { url, q } = req?.query
+  // get the get-params
+  const { searchParams } = new URL(req.url)
+  const url = searchParams.get('url')
 
-  // if (typeof url !== 'string' || url.length === 0) {
-  //   return Response.json({
-  //     error: 'no url in get (?url=x)'
-  //   }, 400)
-  // }
+  console.log('url', url)
+
+  // const q = searchParams.get('q')
+
+  if (typeof url !== 'string' || url.length === 0) {
+    return Response.json({
+      error: 'no url in get (?url=x)'
+    }, 400)
+  }
 
   // if (typeof q !== 'string' || q.length === 0) {
   //   return Response.json({
@@ -32,45 +24,21 @@ export async function GET(req, res) {
   //   }, 400)
   // }
 
-  const url = 'https://www.example.com'
+  // const url = 'https://www.example.com'
 
   try {
-    const response_data = {}
+    const response_data = await openWebpage(url)
 
-    // Optional: Load any fonts you need. Open Sans is included by default in AWS Lambda instances
-    // await chromium.font(
-    //   "https://raw.githack.com/googlei18n/noto-emoji/master/fonts/NotoColorEmoji.ttf"
-    // );
+    return new Response(response_data.markdown, {
+      status: 200,
+      headers: {
+        'content-type': 'text/html;charset=UTF-8',
+      },
+    })
 
-    const browser = await puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath: IS_LOCAL
-        ? process.env.LOCAL_CHROMIUM_PATH
-        : await chromium.executablePath("https://github.com/Sparticuz/chromium/releases/download/v119.0.2/chromium-v119.0.2-pack.tar"),
-      headless: IS_LOCAL ? false : chromium.headless,
-      ignoreHTTPSErrors: true,
-    });
-
-    const page = await browser.newPage();
-
-    await page.goto(url, { waitUntil: "networkidle0" });
-
-    console.log("Chromium:", await browser.version());
-    console.log("Page Title:", await page.title());
-
-    response_data.url = await page.url();
-    response_data.chromium = await browser.version();
-    response_data.title = await page.title();
-
-    const html_text = await simplifyHtml(page);
-    response_data.html_text = html_text;
-
-    await browser.close();
-
-    return Response.json(response_data)
+    // return Response.json(response_data)
   } catch (error) {
-    console.log('error', error)
+    console.error('error', error)
     return Response.json({ error }, 500)
   }
 
